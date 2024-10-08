@@ -1,6 +1,13 @@
 <h1>Login</h1>
 <form method="post" action="/login">
-    <input type="text" name="username" placeholder="Username" required />
+    <input type="email" name="email" placeholder="E-mail" required />
     <input type="password" name="password" placeholder="Password" required />
     <input type="submit" value="Login" />
+    <% if (error && error.length!==0) { %>
+        <div class="w3-panel w3-red">
+            <h5 class="w3-center">
+                <%= error %>
+            </h5>
+        </div>
+        <% } %>
 </form>

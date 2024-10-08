@@ -64,6 +64,25 @@ function establishErrorHandling(app, server) {
     });
 }
 
+function setUpRoutes(app) {
+
+
+    app.get('/', (req, res) => {
+        res.render('index', { title: 'Home' });
+    });
+
+    app.get('/login', (req, res) => {
+        res.render('login', { title: 'Login', message: req.flash('error') });
+    });
+
+    const authenticationMiddleware = require('./middleware/authenticationMiddleware');
+    app.get('/welcome', authenticationMiddleware.ensureAuthenticated('/login'), (req, res) => {
+        res.render('welcome', { title: 'Welcome', user: req.user });
+    });
+
+    app.post('/login', authenticationMiddleware.login('/welcome', '/login'));
+}
+
 async function main() {
     const app = setUpExpressApp();
 
@@ -76,50 +95,10 @@ async function main() {
     const passportConfig = require("./configuration/passportConfig");
     passportConfig(app);
 
-    const bodyParser = require('body-parser');
-    const cookieParser = require('cookie-parser');
-    const flash = require('connect-flash');
-    const LocalStrategy = require('passport-local').Strategy;
+    const layoutsConfig = require("./configuration/layoutsConfig");
+    layoutsConfig(app);
 
-
-    const expressLayouts = require('express-ejs-layouts');
-
-    app.set('view engine', 'ejs');
-    app.use(expressLayouts);
-
-
-    app.get('/', (req, res) => {
-        res.render('index', { title: 'Home' });
-    });
-
-    app.get('/login', (req, res) => {
-        res.render('login', { title: 'Login', message: req.flash('error') });
-    });
-
-    function isAuthenticated(req, res, next) {
-        if (req.isAuthenticated()) {
-            return next();
-        }
-        res.redirect('/login');
-    }
-
-    function isNotAuthenticated(req, res, next) {
-        if (req.isAuthenticated()) {
-            return res.redirect('/welcome');
-        }
-        next();
-    }
-
-    app.get('/welcome', isAuthenticated, (req, res) => {
-        res.render('welcome', { title: 'Welcome', user: req.user });
-    });
-
-    const passport = require('passport');
-    app.post('/login', isNotAuthenticated, passport.authenticate('local', {
-        successRedirect: '/welcome',
-        failureRedirect: '/login',
-        failureFlash: true
-    }));
+    setUpRoutes(app);
 
     const server = app.listen(config.http_port, () => {
         console.log(`Device Hub listening at http://localhost:${config.http_port}`);
