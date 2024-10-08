@@ -22,15 +22,9 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-const config = require('./configuration');
+const dotenv = require('dotenv');
+dotenv.config();
 
-const express = require('express');
-const app = express();
-
-app.get('/', (req, res) => {
-    res.send('Hello World');
-});
-
-app.listen(config.port, () => {
-    console.log(`Server is running on port ${config.port}`);
-});
+module.exports = {
+    port: process.env.HTTP_PORT || 3000
+};
