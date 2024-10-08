@@ -1,0 +1,23 @@
+{
+  "name": "device-hub",
+  "version": "0.0.1",
+  "description": "A hub service for IoT devices",
+  "main": "index.js",
+  "scripts": {
+    "start": "nodemon index.js"
+  },
+  "keywords": [
+    "hub",
+    "iot",
+    "devices"
+  ],
+  "author": "Grzegorz Grzęda",
+  "license": "MIT",
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "express": "^4.21.1",
+    "mongoose": "^8.7.0",
+    "mqtt": "^5.10.1",
+    "nodemon": "^3.1.7"
+  }
+}
