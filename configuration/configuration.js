@@ -25,6 +25,17 @@
 const dotenv = require('dotenv');
 dotenv.config();
 
+const mongoose = require('mongoose');
+
+mongoose.connect(process.env.MONGODB_URI)
+    .then(() => {
+        console.log('Connected to MongoDB');
+    })
+    .catch((error) => {
+        console.error('Error connecting to MongoDB: ', error.message);
+    });
+
 module.exports = {
-    http_port: process.env.HTTP_PORT || 3000
+    http_port: process.env.HTTP_PORT || 3000,
+    mongodb_uri: process.env.MONGODB_URI
 };

@@ -22,7 +22,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-const config = require('./configuration');
+const config = require('./configuration/configuration');
 
 const express = require('express');
 const app = express();
@@ -33,6 +33,13 @@ const bodyParser = require('body-parser');
 const cookieParser = require('cookie-parser');
 const flash = require('connect-flash');
 const LocalStrategy = require('passport-local').Strategy;
+
+const MongoStore = require('connect-mongo');
+
+const expressLayouts = require('express-ejs-layouts');
+
+app.set('view engine', 'ejs');
+app.use(expressLayouts);
 
 passport.use(new LocalStrategy(
     (username, password, done) => {
@@ -58,21 +65,45 @@ app.use(cookieParser());
 app.use(session({
     secret: 'secret',
     resave: false,
-    saveUninitialized: false
+    saveUninitialized: false,
+    store: MongoStore.create({
+        mongoUrl: config.mongodb_uri,
+        collectionName: 'sessions',
+        ttl: 14 * 24 * 60 * 60
+    })
 }));
 app.use(passport.initialize());
 app.use(passport.session());
 
+app.use(flash());
+
 app.get('/', (req, res) => {
-    res.send('Hello World');
+    res.render('index', { title: 'Home' });
 });
 
 app.get('/login', (req, res) => {
-    res.send('<form method="post"><input type="text" name="username" /><input type="password" name="password" /><input type="submit" value="Login" /></form>');
-}
-);
+    res.render('login', { title: 'Login', message: req.flash('error') });
+});
 
-app.post('/login', passport.authenticate('local', {
+function isAuthenticated(req, res, next) {
+    if (req.isAuthenticated()) {
+        return next();
+    }
+    res.redirect('/login');
+}
+
+function isNotAuthenticated(req, res, next) {
+    if (req.isAuthenticated()) {
+        return res.redirect('/welcome');
+    }
+    next();
+}
+
+app.get('/welcome', isAuthenticated, (req, res) => {
+    res.render('welcome', { title: 'Welcome', user: req.user });
+});
+
+app.post('/login', isNotAuthenticated, passport.authenticate('local', {
     successRedirect: '/welcome',
     failureRedirect: '/login',
     failureFlash: true
