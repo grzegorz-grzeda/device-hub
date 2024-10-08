@@ -27,10 +27,57 @@ const config = require('./configuration');
 const express = require('express');
 const app = express();
 
+const passport = require('passport');
+const session = require('express-session');
+const bodyParser = require('body-parser');
+const cookieParser = require('cookie-parser');
+const flash = require('connect-flash');
+const LocalStrategy = require('passport-local').Strategy;
+
+passport.use(new LocalStrategy(
+    (username, password, done) => {
+        if (username === 'admin' && password === 'admin') {
+            return done(null, { username: 'admin' });
+        } else {
+            return done(null, false, { message: 'Incorrect username or password' });
+        }
+    }
+));
+
+passport.serializeUser((user, done) => {
+    done(null, user.username);
+});
+
+passport.deserializeUser((username, done) => {
+    done(null, { username });
+}
+);
+
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(cookieParser());
+app.use(session({
+    secret: 'secret',
+    resave: false,
+    saveUninitialized: false
+}));
+app.use(passport.initialize());
+app.use(passport.session());
+
 app.get('/', (req, res) => {
     res.send('Hello World');
 });
 
-app.listen(config.port, () => {
-    console.log(`Server is running on port ${config.port}`);
+app.get('/login', (req, res) => {
+    res.send('<form method="post"><input type="text" name="username" /><input type="password" name="password" /><input type="submit" value="Login" /></form>');
+}
+);
+
+app.post('/login', passport.authenticate('local', {
+    successRedirect: '/welcome',
+    failureRedirect: '/login',
+    failureFlash: true
+}));
+
+app.listen(config.http_port, () => {
+    console.log(`Server is running on port ${config.http_port}`);
 });

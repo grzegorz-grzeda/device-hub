@@ -26,5 +26,5 @@ const dotenv = require('dotenv');
 dotenv.config();
 
 module.exports = {
-    port: process.env.HTTP_PORT || 3000
+    http_port: process.env.HTTP_PORT || 3000
 };
