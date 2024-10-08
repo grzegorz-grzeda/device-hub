@@ -24,91 +24,108 @@
  */
 const config = require('./configuration/configuration');
 
-const express = require('express');
-const app = express();
+function setUpExpressApp() {
+    const express = require("express");
+    const app = express();
 
-const passport = require('passport');
-const session = require('express-session');
-const bodyParser = require('body-parser');
-const cookieParser = require('cookie-parser');
-const flash = require('connect-flash');
-const LocalStrategy = require('passport-local').Strategy;
+    app.use(express.json());
+    app.use(express.urlencoded({ extended: true }));
 
-const MongoStore = require('connect-mongo');
+    const path = require("path");
+    app.use(express.static(path.join(__dirname, "views/public")));
 
-const expressLayouts = require('express-ejs-layouts');
+    const bodyParser = require("body-parser");
+    app.use(bodyParser.urlencoded({ extended: true }));
 
-app.set('view engine', 'ejs');
-app.use(expressLayouts);
+    const morgan = require('morgan');
+    app.use(morgan('dev'));
 
-passport.use(new LocalStrategy(
-    (username, password, done) => {
-        if (username === 'admin' && password === 'admin') {
-            return done(null, { username: 'admin' });
-        } else {
-            return done(null, false, { message: 'Incorrect username or password' });
+    return app;
+}
+
+function establishErrorHandling(app, server) {
+    const errorHandling = require("./middleware/errorMiddleware");
+    errorHandling(app);
+
+    process.on('unhandledRejection', (err) => {
+        console.error('Unhandled Rejection! Shutting down...');
+        console.error(err.name, err.message);
+        server.close(() => {
+            process.exit(1);
+        });
+    });
+
+    process.on('uncaughtException', (err) => {
+        console.error('Uncaught Exception! Shutting down...');
+        console.error(err.name, err.message);
+        server.close(() => {
+            process.exit(1);
+        });
+    });
+}
+
+async function main() {
+    const app = setUpExpressApp();
+
+    const sessionConfig = require("./configuration/sessionConfig");
+    await sessionConfig(app);
+
+    const flashMessageConfig = require("./configuration/flashMessageConfig");
+    flashMessageConfig(app);
+
+    const passportConfig = require("./configuration/passportConfig");
+    passportConfig(app);
+
+    const bodyParser = require('body-parser');
+    const cookieParser = require('cookie-parser');
+    const flash = require('connect-flash');
+    const LocalStrategy = require('passport-local').Strategy;
+
+
+    const expressLayouts = require('express-ejs-layouts');
+
+    app.set('view engine', 'ejs');
+    app.use(expressLayouts);
+
+
+    app.get('/', (req, res) => {
+        res.render('index', { title: 'Home' });
+    });
+
+    app.get('/login', (req, res) => {
+        res.render('login', { title: 'Login', message: req.flash('error') });
+    });
+
+    function isAuthenticated(req, res, next) {
+        if (req.isAuthenticated()) {
+            return next();
         }
+        res.redirect('/login');
     }
-));
 
-passport.serializeUser((user, done) => {
-    done(null, user.username);
-});
-
-passport.deserializeUser((username, done) => {
-    done(null, { username });
-}
-);
-
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use(cookieParser());
-app.use(session({
-    secret: 'secret',
-    resave: false,
-    saveUninitialized: false,
-    store: MongoStore.create({
-        mongoUrl: config.mongodb_uri,
-        collectionName: 'sessions',
-        ttl: 14 * 24 * 60 * 60
-    })
-}));
-app.use(passport.initialize());
-app.use(passport.session());
-
-app.use(flash());
-
-app.get('/', (req, res) => {
-    res.render('index', { title: 'Home' });
-});
-
-app.get('/login', (req, res) => {
-    res.render('login', { title: 'Login', message: req.flash('error') });
-});
-
-function isAuthenticated(req, res, next) {
-    if (req.isAuthenticated()) {
-        return next();
+    function isNotAuthenticated(req, res, next) {
+        if (req.isAuthenticated()) {
+            return res.redirect('/welcome');
+        }
+        next();
     }
-    res.redirect('/login');
+
+    app.get('/welcome', isAuthenticated, (req, res) => {
+        res.render('welcome', { title: 'Welcome', user: req.user });
+    });
+
+    const passport = require('passport');
+    app.post('/login', isNotAuthenticated, passport.authenticate('local', {
+        successRedirect: '/welcome',
+        failureRedirect: '/login',
+        failureFlash: true
+    }));
+
+    const server = app.listen(config.http_port, () => {
+        console.log(`Device Hub listening at http://localhost:${config.http_port}`);
+    });
+
+    establishErrorHandling(app, server);
 }
 
-function isNotAuthenticated(req, res, next) {
-    if (req.isAuthenticated()) {
-        return res.redirect('/welcome');
-    }
-    next();
-}
-
-app.get('/welcome', isAuthenticated, (req, res) => {
-    res.render('welcome', { title: 'Welcome', user: req.user });
-});
-
-app.post('/login', isNotAuthenticated, passport.authenticate('local', {
-    successRedirect: '/welcome',
-    failureRedirect: '/login',
-    failureFlash: true
-}));
-
-app.listen(config.http_port, () => {
-    console.log(`Server is running on port ${config.http_port}`);
-});
+main();
