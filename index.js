@@ -93,6 +93,9 @@ function setUpRoutes(app) {
     });
 
     app.post('/login', authenticationMiddleware.login('/welcome', '/login'));
+
+    const profileRouter = require('./routes/profileRouter');
+    app.use('/profile', profileRouter);
 }
 
 async function main() {
