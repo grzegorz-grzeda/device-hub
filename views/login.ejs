@@ -1,13 +1,27 @@
-<h1>Login</h1>
-<form method="post" action="/login">
-    <input type="email" name="email" placeholder="E-mail" required />
-    <input type="password" name="password" placeholder="Password" required />
-    <input type="submit" value="Login" />
-    <% if (error && error.length!==0) { %>
-        <div class="w3-panel w3-red">
-            <h5 class="w3-center">
-                <%= error %>
-            </h5>
-        </div>
-        <% } %>
-</form>
+<div class="w3-container" style="margin: 50px auto; width: 800px;">
+    <div class="w3-container w3-teal">
+        <h2>Login</h2>
+    </div>
+
+    <form class="w3-container" method="post" action="/login">
+        <p>
+            <label class="w3-text-teal"><b>E-mail</b></label>
+            <input class="w3-input w3-border w3-light-grey" type="email" name="email" placeholder="E-mail" required />
+        </p>
+        <p>
+            <label class="w3-text-teal"><b>Password</b></label>
+            <input class="w3-input w3-border w3-light-grey" type="password" name="password" placeholder="Password"
+                required />
+        </p>
+        <p>
+            <button class="w3-btn w3-blue-grey" type="submit">Login</button>
+        </p>
+        <% if (error && error.length!==0) { %>
+            <div class="w3-panel w3-red">
+                <h5 class="w3-center">
+                    <%= error %>
+                </h5>
+            </div>
+            <% } %>
+    </form>
+</div>
