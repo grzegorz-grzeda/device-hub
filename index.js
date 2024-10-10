@@ -43,6 +43,20 @@ function setUpExpressApp() {
     return app;
 }
 
+async function configureApp(app) {
+    const sessionConfig = require("./configuration/sessionConfig");
+    await sessionConfig(app);
+
+    const flashMessageConfig = require("./configuration/flashMessageConfig");
+    flashMessageConfig(app);
+
+    const passportConfig = require("./configuration/passportConfig");
+    passportConfig(app);
+
+    const layoutsConfig = require("./configuration/layoutsConfig");
+    layoutsConfig(app);
+}
+
 function establishErrorHandling(app, server) {
     const errorHandling = require("./middleware/errorMiddleware");
     errorHandling(app);
@@ -65,8 +79,6 @@ function establishErrorHandling(app, server) {
 }
 
 function setUpRoutes(app) {
-
-
     app.get('/', (req, res) => {
         res.render('index', { title: 'Home' });
     });
@@ -86,17 +98,7 @@ function setUpRoutes(app) {
 async function main() {
     const app = setUpExpressApp();
 
-    const sessionConfig = require("./configuration/sessionConfig");
-    await sessionConfig(app);
-
-    const flashMessageConfig = require("./configuration/flashMessageConfig");
-    flashMessageConfig(app);
-
-    const passportConfig = require("./configuration/passportConfig");
-    passportConfig(app);
-
-    const layoutsConfig = require("./configuration/layoutsConfig");
-    layoutsConfig(app);
+    await configureApp(app);
 
     setUpRoutes(app);
 
