@@ -4,7 +4,8 @@
   "description": "A hub service for IoT devices",
   "main": "index.js",
   "scripts": {
-    "start": "nodemon index.js"
+    "start": "nodemon index.js",
+    "createAdmin": "node tools/createAdmin.js"
   },
   "keywords": [
     "hub",
